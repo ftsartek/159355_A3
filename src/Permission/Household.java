@@ -158,7 +158,7 @@ class HouseholdListener extends Thread {
 
     @Override
     public void run() {
-        while (!household.wantedShopsDone) {
+        while (true) {
             try {
                 receive();
                 Thread.sleep(50);
