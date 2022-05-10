@@ -1,29 +1,37 @@
 package Permission;
 
-import java.util.ArrayList;
+
+import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class Household extends Thread {
 
+    // Class variables -
     protected int ticketNumber;
     protected int highestNumber;
     protected int id;
-    protected ArrayList<Integer> deferred;
-    protected ArrayList<Integer> awaitingReply;
+    protected CopyOnWriteArrayList<Integer> deferred;
+    protected CopyOnWriteArrayList<Integer> awaitingReply;
     protected boolean requestCS = false;
-    Messenger messenger;
-    protected boolean stillPandemic = true;
+    protected boolean wantedShopsDone = false;
     protected LinkedBlockingQueue<Message> receiveQueue = new LinkedBlockingQueue<>();
     private HouseholdListener listener;
+    private int shopsComplete;
+    Messenger messenger;
+    Shop shop;
+    Random rng = new Random();
 
 
-    public Household (int id, Messenger messenger) {
+    public Household (int id, Messenger messenger, Shop shop) {
         this.id = id;
-        deferred = new ArrayList<>();
-        awaitingReply = new ArrayList<>();
+        deferred = new CopyOnWriteArrayList<>();
+        awaitingReply = new CopyOnWriteArrayList<>();
         ticketNumber = 0;
         highestNumber = 0;
+        shopsComplete = 0;
         this.messenger = messenger;
+        this.shop = shop;
         listener = new HouseholdListener(this);
         listener.start();
     }
@@ -44,10 +52,14 @@ public class Household extends Thread {
     }
 
 
-    public void pandemicOver() {
-        this.stillPandemic = false;
+    public void wantedShopsComplete() {
+        this.wantedShopsDone = true;
+        messenger.removeHousehold(this);
     }
 
+    public void completedShop() {
+        shopsComplete++;
+    }
 
     public int getID() {
         return this.id;
@@ -70,43 +82,50 @@ public class Household extends Thread {
     }
 
     synchronized protected void updateTicketNumber() {
-        ticketNumber = highestNumber + 1;
+        // First round, highestNumber is 0 so we'll randomise the ticket number to start with
+        if (highestNumber == 0) {
+            ticketNumber = rng.nextInt(1, 26);
+        } else {
+            ticketNumber = highestNumber + 1;
+        }
+    }
+
+    synchronized protected void replyToAllDeferred() {
+        for (Integer householdID : deferred) {
+            send(MessageType.REPLY, householdID);
+            deferred.remove((Integer) householdID);
+        }
+    }
+
+    synchronized protected void addToDeferred(int id) {
+        deferred.add(id);
     }
 
     @Override
     public void run() {
-        System.out.println("Main thread for " + id + " is running");
-        try {
-            Thread.sleep(1500);
-        } catch (InterruptedException ignored) {}
-        while (stillPandemic) {
+        while (!wantedShopsDone) {
             try {
                 Thread.sleep(1500);
-            } catch (InterruptedException ignored) {}
-            requestCS = true;
-            updateTicketNumber();
-            for (int id : messenger.getHouseholdIDs()) {
-                if (id != this.id) {
-                    send(MessageType.REQUEST, id);
+                requestCS = true;
+                updateTicketNumber();
+                for (int id : messenger.getHouseholdIDs()) {
+                    if (id != this.id) {
+                        send(MessageType.REQUEST, id);
+                    }
                 }
-            }
-            while (awaitCount() > 0) {
-                try {
+                while (awaitCount() > 0) {
                     Thread.sleep(50);
-                } catch (InterruptedException ignored) {}
-            }
-            System.out.println("Household " + id + " in and out of the critical section...");
-            try {
-                Thread.sleep(1500);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            requestCS = false;
-            for (Integer householdID : deferred) {
-                send(MessageType.REPLY, householdID);
-                deferred.remove((Integer) householdID);
+                }
+                shop.doShop(this);
+                requestCS = false;
+                replyToAllDeferred();
+            } catch (InterruptedException ignored) {}
+            if (shopsComplete >= 5) {
+                this.wantedShopsComplete();
             }
         }
+        this.listener.interrupt();
+        System.out.println("Household " + this.id + " has completed their shopping for the week.");
     }
 }
 
@@ -124,27 +143,22 @@ class HouseholdListener extends Thread {
         if (message.getMessageType() == MessageType.REQUEST) {
             if (message.getTicketNumber() > household.highestNumber) {
                 household.updateHighestNumber(message.getTicketNumber());
-                System.out.println("Thread " + household.id + " has just found a new highest number");
             }
             if (!household.requestCS || (message.getTicketNumber() < household.ticketNumber ||
                     (message.getTicketNumber() == household.ticketNumber && message.getSenderID() < household.id))) {
-                System.out.println("Thread " + household.id + " is replying to " + message.getSenderID());
                 household.send(MessageType.REPLY, message.getSenderID());
             } else {
-                System.out.println("Thread " + household.id + " is deferring reply to " + message.getSenderID());
-                household.deferred.add(message.getSenderID());
+                household.addToDeferred(message.getSenderID());
 
             }
         } else if (message.getMessageType() == MessageType.REPLY) {
-            System.out.println("Thread " + household.id + " is no longer waiting for a reply from " + message.getSenderID());
-            household.removeAwaiting(message.getDestinationID());
+            household.removeAwaiting(message.getSenderID());
         }
     }
 
     @Override
     public void run() {
-        System.out.println("Receiver for " + household.id + " is now listening...");
-        while (household.stillPandemic) {
+        while (!household.wantedShopsDone) {
             try {
                 receive();
                 Thread.sleep(50);
