@@ -1,4 +1,6 @@
-package Permission;
+package Token;
+
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Message {
 
@@ -6,21 +8,22 @@ public class Message {
     private MessageType messageType;
     private int senderID;
     private int destinationID;
-    private int ticketNumber;
+    private int requestedNumber;
+    private CopyOnWriteArrayList<Integer> granted;
 
-    // Constructor used to create request type methods
-    public Message(MessageType messageType, int destinationID, int senderID, int ticketNumber) {
+    // Constructor
+    public Message(MessageType messageType, int destinationID, int senderID, int requestedNumber) {
         this.messageType = messageType;
         this.destinationID = destinationID;
         this.senderID = senderID;
-        this.ticketNumber = ticketNumber;
+        this.requestedNumber = requestedNumber;
     }
 
-    // Constructor used to create reply type methods
-    public Message(MessageType messageType, int destinationID, int senderID) {
+    public Message(MessageType messageType, int destinationID, int senderID, CopyOnWriteArrayList<Integer> granted) {
         this.messageType = messageType;
         this.destinationID = destinationID;
         this.senderID = senderID;
+        this.granted = granted;
     }
 
     // Returns the message type
@@ -40,7 +43,16 @@ public class Message {
 
     // Returns the sender's ticket number
     public int getRequestedNumber() {
-        return this.ticketNumber;
+        return this.requestedNumber;
+    }
+
+    public CopyOnWriteArrayList<Integer> getGrantedArray() { return this.granted; }
+
+    public boolean containsToken() {
+        if (this.messageType == MessageType.TOKEN) {
+            return true;
+        }
+        return false;
     }
 
 }

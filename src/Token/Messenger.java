@@ -51,15 +51,22 @@ public class Messenger {
         return null;
     }
 
+    public int getHouseholdCount() {
+        return households.size();
+    }
+
     // Forwards a message to the destination contained in the message
     public void forwardMessage(Message message) {
         Household receiver = getHouseholdByID(message.getDestinationID());
         if (receiver != null) {
-            receiver.receiveQueue.add(message);
+            if (message.getMessageType() == MessageType.REQUEST) {
+                receiver.receiveQueue.add(message);
+            } else if (message.getMessageType() == MessageType.TOKEN) {
+                System.out.println("");
+                System.out.println("Household " + message.getSenderID() + " has sent the token to household " + message.getDestinationID());
+                receiver.tokenQueue.add(message);
+            }
+
         }
-    }
-
-    public void passToken(Token token, int destination) {
-
     }
 }

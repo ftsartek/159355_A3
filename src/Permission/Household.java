@@ -175,12 +175,12 @@ class HouseholdListener extends Thread {
         // Handle REQUEST type messages
         if (message.getMessageType() == MessageType.REQUEST) {
             // Update highest number if the ticketnumber is higher than the current value
-            if (message.getTicketNumber() > household.highestNumber) {
-                household.updateHighestNumber(message.getTicketNumber());
+            if (message.getRequestedNumber() > household.highestNumber) {
+                household.updateHighestNumber(message.getRequestedNumber());
             }
             // Send a reply if the other household should go first
-            if (!household.requestCS || (message.getTicketNumber() < household.ticketNumber ||
-                    (message.getTicketNumber() == household.ticketNumber && message.getSenderID() < household.id))) {
+            if (!household.requestCS || (message.getRequestedNumber() < household.ticketNumber ||
+                    (message.getRequestedNumber() == household.ticketNumber && message.getSenderID() < household.id))) {
                 household.send(MessageType.REPLY, message.getSenderID());
             } else { // Otherwise add the household to the deferred array
                 household.addToDeferred(message.getSenderID());
