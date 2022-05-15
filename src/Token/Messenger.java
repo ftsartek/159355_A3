@@ -7,8 +7,6 @@ public class Messenger {
     // Array used to hold the list of households
     private ArrayList<Household> households;
 
-    private Household tokenHolder;
-
     // Constructor
     public Messenger() {
         households = new ArrayList<>();
@@ -16,9 +14,6 @@ public class Messenger {
 
     // Adds a household to the messenger list
     public void addHousehold(Household household) {
-        if (household.hasToken()) {
-            tokenHolder = household;
-        }
         households.add(household);
     }
 
@@ -67,6 +62,15 @@ public class Messenger {
                 receiver.tokenQueue.add(message);
             }
 
+        }
+    }
+
+    // Returns the final household if there's only one, else null.
+    public Household getLastHousehold() {
+        if (households.size() == 1) {
+            return households.get(0);
+        } else {
+            return null;
         }
     }
 }

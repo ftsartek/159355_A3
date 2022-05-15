@@ -29,12 +29,11 @@ public class Shop {
                 System.out.println("There are multiple households in the shop at once! People are going to get sick...");
             }
             // Wait a little bit...
-            Thread.sleep(rng.nextInt(50, 250));
+            Thread.sleep(rng.nextInt(500, 2500));
             // Household leaves, their shop count is iterated and they're removed.
-            System.out.println("Household " + household.getID() + " has spent $" + rng.nextInt(50, 250) + "." + rng.nextInt(0, 10) + rng.nextInt(0, 10) + " and is leaving the shop.");
-            Thread.sleep(100);
             household.completedShop();
             occupants.remove(household);
+            System.out.println("Household " + household.getID() + " has spent $" + rng.nextInt(50, 250) + "." + rng.nextInt(0, 10) + rng.nextInt(0, 10) + " and is leaving the shop.");
         }
     }
 

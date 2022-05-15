@@ -11,7 +11,7 @@ public class Message {
     private int requestedNumber;
     private CopyOnWriteArrayList<Integer> granted;
 
-    // Constructor
+    // Constructor for Request type messages
     public Message(MessageType messageType, int destinationID, int senderID, int requestedNumber) {
         this.messageType = messageType;
         this.destinationID = destinationID;
@@ -19,6 +19,7 @@ public class Message {
         this.requestedNumber = requestedNumber;
     }
 
+    // Constructor for Token type messages
     public Message(MessageType messageType, int destinationID, int senderID, CopyOnWriteArrayList<Integer> granted) {
         this.messageType = messageType;
         this.destinationID = destinationID;
@@ -46,8 +47,10 @@ public class Message {
         return this.requestedNumber;
     }
 
+    // Returns the 'granted' array held by this message.
     public CopyOnWriteArrayList<Integer> getGrantedArray() { return this.granted; }
 
+    // Returns true if this message contains the token, else false
     public boolean containsToken() {
         if (this.messageType == MessageType.TOKEN) {
             return true;

@@ -11,6 +11,7 @@ public class Main {
         Shop shop = new Shop();
         Random randomizer = new Random();
 
+        // Give the token randomly to one of the starting households
         int getsTokenFirst = randomizer.nextInt(0, 25);
         System.out.println("Household " + getsTokenFirst + " gets the token to start with.");
 
